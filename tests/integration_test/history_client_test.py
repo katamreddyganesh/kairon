@@ -1428,6 +1428,32 @@ def test_delete_user_chat_history_connection_failure(mock_auth_admin, mock_mongo
     assert actual["message"].__contains__("Failed to connect to service: localhost")
     assert not actual["success"]
 
+@responses.activate
+def test_delete_bot_chat_history_till_date_not_today(mock_auth_admin, mock_mongo_processor_endpoint_not_configured,
+                                                     monkeypatch):
+    till_date = datetime.utcnow().date() - timedelta(days=30)
+    event_url = f"{Utility.environment['events']['server_url']}/api/events/execute/{EventClass.delete_history}"
+    responses.add("POST",
+                  event_url,
+                  json={"success": True, "message": "Event triggered successfully!"},
+                  match=[responses.matchers.json_params_matcher({
+                      "data": {'bot': 'integration2', 'user': 'integration@demo.com',
+                               'till_date': Utility.convert_date_to_string(till_date),
+                               'sender_id': ""},
+                      "cron_exp": None, "timezone": None
+                  })],
+                  status=200)
+
+    response = client.delete(
+        f"/api/history/integration2/bot/delete?till_date={till_date}",
+        headers={"Authorization": pytest.token_type + " " + pytest.access_token},
+    )
+
+    actual = response.json()
+    assert actual["error_code"] == 0
+    assert actual["message"] == 'Delete chat history initiated. It may take a while. Check logs!'
+    assert actual["success"]
+
 
 @responses.activate
 def test_delete_user_history_unmanaged_history_server(mock_auth_admin, mock_mongo_processor):
