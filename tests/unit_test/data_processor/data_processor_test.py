@@ -5207,6 +5207,7 @@ class TestMongoProcessor:
         processor = CognitionDataProcessor()
         response = DataProcessor.get_collection_data_with_id(bot, collection_id=pytest.collection_id)
         print(response)
+        print(response)
         assert response == {
             '_id': pytest.collection_id,
             'collection_name': 'user',
